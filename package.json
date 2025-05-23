@@ -1,0 +1,18 @@
+{
+  "name": "owner-only-contract",
+  "version": "1.0.0",
+  "description": "A Hardhat project for deploying and interacting with an owner-only Solidity contract",
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile": "npx hardhat compile",
+    "deploy": "node scripts/deploy.js"
+  },
+  "keywords": ["solidity", "hardhat", "blockchain", "owner-only"],
+  "author": "Akshara Gupta",
+  "license": "MIT",
+  "devDependencies": {
+    "hardhat": "^2.21.0",
+    "chai": "^4.3.7",
+    "ethers": "^6.8.1"
+  }
+}
