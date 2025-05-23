@@ -1,0 +1,204 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+/**
+ * @title OwnerOnly Contract
+ * @dev Demonstrates access control using modifiers
+ * @author Your Name
+ */
+contract OwnerOnly {
+    // State variables
+    address public owner;
+    string public secretMessage;
+    uint256 public ownerOnlyCounter;
+    bool public contractPaused;
+    
+    // Events
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event SecretMessageUpdated(string newMessage);
+    event ContractPaused();
+    event ContractUnpaused();
+    event CounterIncremented(uint256 newValue);
+    event EmergencyWithdrawal(address indexed owner, uint256 amount);
+    
+    // Custom errors for gas efficiency
+    error NotOwner();
+    error ContractIsPaused();
+    error InvalidAddress();
+    error TransferFailed();
+    
+    /**
+     * @dev Constructor sets the deployer as the owner
+     */
+    constructor() {
+        owner = msg.sender;
+        secretMessage = "Initial secret message";
+        ownerOnlyCounter = 0;
+        contractPaused = false;
+        
+        emit OwnershipTransferred(address(0), msg.sender);
+    }
+    
+    /**
+     * @dev Modifier to check if caller is the owner
+     */
+    modifier onlyOwner() {
+        if (msg.sender != owner) {
+            revert NotOwner();
+        }
+        _;
+    }
+    
+    /**
+     * @dev Modifier to check if contract is not paused
+     */
+    modifier whenNotPaused() {
+        if (contractPaused) {
+            revert ContractIsPaused();
+        }
+        _;
+    }
+    
+    /**
+     * @dev Modifier to check if contract is paused
+     */
+    modifier whenPaused() {
+        if (!contractPaused) {
+            revert("Contract is not paused");
+        }
+        _;
+    }
+    
+    /**
+     * @dev Function that only owner can call - Updates secret message
+     * @param _newMessage The new secret message
+     */
+    function updateSecretMessage(string memory _newMessage) 
+        external 
+        onlyOwner 
+        whenNotPaused 
+    {
+        secretMessage = _newMessage;
+        emit SecretMessageUpdated(_newMessage);
+    }
+    
+    /**
+     * @dev Function that only owner can call - Increments counter
+     */
+    function incrementCounter() external onlyOwner whenNotPaused {
+        ownerOnlyCounter++;
+        emit CounterIncremented(ownerOnlyCounter);
+    }
+    
+    /**
+     * @dev Function that only owner can call - Resets counter
+     */
+    function resetCounter() external onlyOwner {
+        ownerOnlyCounter = 0;
+        emit CounterIncremented(0);
+    }
+    
+    /**
+     * @dev Pause the contract - only owner can call
+     */
+    function pauseContract() external onlyOwner whenNotPaused {
+        contractPaused = true;
+        emit ContractPaused();
+    }
+    
+    /**
+     * @dev Unpause the contract - only owner can call
+     */
+    function unpauseContract() external onlyOwner whenPaused {
+        contractPaused = false;
+        emit ContractUnpaused();
+    }
+    
+    /**
+     * @dev Transfer ownership to a new owner - only current owner can call
+     * @param newOwner Address of the new owner
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        if (newOwner == address(0)) {
+            revert InvalidAddress();
+        }
+        
+        address previousOwner = owner;
+        owner = newOwner;
+        
+        emit OwnershipTransferred(previousOwner, newOwner);
+    }
+    
+    /**
+     * @dev Renounce ownership - only owner can call
+     * WARNING: This will leave the contract without an owner
+     */
+    function renounceOwnership() external onlyOwner {
+        address previousOwner = owner;
+        owner = address(0);
+        
+        emit OwnershipTransferred(previousOwner, address(0));
+    }
+    
+    /**
+     * @dev Emergency withdrawal function - only owner can call
+     */
+    function emergencyWithdraw() external onlyOwner {
+        uint256 balance = address(this).balance;
+        
+        (bool success, ) = payable(owner).call{value: balance}("");
+        if (!success) {
+            revert TransferFailed();
+        }
+        
+        emit EmergencyWithdrawal(owner, balance);
+    }
+    
+    /**
+     * @dev Public function that anyone can call
+     */
+    function publicFunction() external view returns (string memory) {
+        return "This function can be called by anyone";
+    }
+    
+    /**
+     * @dev Get contract info - anyone can call
+     */
+    function getContractInfo() external view returns (
+        address currentOwner,
+        string memory currentMessage,
+        uint256 currentCounter,
+        bool isPaused,
+        uint256 contractBalance
+    ) {
+        return (
+            owner,
+            secretMessage,
+            ownerOnlyCounter,
+            contractPaused,
+            address(this).balance
+        );
+    }
+    
+    /**
+     * @dev Check if address is owner
+     * @param account Address to check
+     */
+    function isOwner(address account) external view returns (bool) {
+        return account == owner;
+    }
+    
+    /**
+     * @dev Receive function to accept Ether
+     */
+    receive() external payable {
+        // Contract can receive Ether
+    }
+    
+    /**
+     * @dev Fallback function
+     */
+    fallback() external payable {
+        // Fallback function
+    }
+}
